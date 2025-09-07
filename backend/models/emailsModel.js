@@ -13,6 +13,7 @@ const emailSchema = new mongoose.Schema({
   },
   folder: {
     type: String,
+    default: 'Pending',
     require: true,
   },
   subject: {

@@ -7,6 +7,7 @@ const emailsModel = require("./models/emailsModel");
 const getQueries = require("./utils/getEmbeddedQueries");
 const { suggetionPromt } = require("./utils/gemini");
 const { triggerWebhook } = require("./slack");
+const { emailCategorizeQueue } = require("./config/bullmq");
 
 dotenv.config();
 
@@ -70,16 +71,16 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
 
           msg.on("end", async () => {
             try {
-              const parsed = await simpleParser(emailData);
+              const parsed = await simpleParser(emailData); 
               const emailObj = {
                 messageId: parsed.messageId,
                 account: parsed.to.value[0].address,
-                folder,
                 subject: parsed.subject,
                 sender: parsed.from.value[0].address,
                 body: parsed.text,
                 receivedAt: parsed.date,
               };
+              await emailCategorizeQueue.add('categorizeEmails', { emailObj});
               emails.push(emailObj);
             } catch (parseErr) {
               console.error(`Parsing error: ${parseErr.message}`);
