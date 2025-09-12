@@ -52,9 +52,10 @@ const suggetionPromt = async (contexts, query) => {
       .join("\n\n");
 
     const prompt = `
-       You are an AI email assistant. Use the following past queries to take valuable information and craft a reply. If you find out that the nex message is not related to the queries then just return "False" -
+       You are an AI email assistant. Use the following past queries to take valuable information and craft a reply. 
+       If you find out that the nex message is not related to the queries then just return "False" -
 
-    ${context}
+    past queries - ${context}
     
     new email recived: "${query}"
     

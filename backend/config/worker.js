@@ -1,19 +1,60 @@
 const {Worker} = require('bullmq');
 const {emailCategorizeQueue , redisConnection} = require('./bullmq');
-const { giveDetails } = require('../utils/gemini');
+const { giveDetails } = require('../utils/llm');
 const emailsModel = require('../models/emailsModel');
+const { startEmailWatcher } = require('../imapManager');
 
 const worker = new Worker('emailCategorizeQueue', async (job)=>{
-    console.log(job.data)
-    const {emailObj} = job.data;
+    try {
+        const {emailObj} = job.data;
     const {subject , body , messageId} = emailObj;
-    const currentMessage = await emailsModel.findOne(messageId);
-    if(!currentMessage){
-
-    }
-    const emailCategory = giveDetails({subject , body});
+    console.log(emailObj.messageId);
+    const currentMessage = await emailsModel.findOne({messageId});
+     if (!currentMessage) {
+        console.log("Message not found, retrying later...");
+        throw new Error("Document not found");
+      }
+    const emailCategory = await giveDetails({subject , body});
+    if(emailCategory === "Error"){
+        await emailCategorizeQueue.add('categorizeEmails',{emailObj});
+        return;
+    } 
     currentMessage.folder=emailCategory;
-    await currentMessage.save();
-
-
+    const updatedMails = await currentMessage.save();
+    return updatedMails.folder;
+    } catch (error) {
+        console.error("Worker error:", err.message);
+      throw err; // let BullMQ handle retries/backoff
+    }
 } , {connection: redisConnection});
+
+worker.on('completed', (job , result) => {
+        console.log(`Job ${job.id} has completed! Result: ${result}`);
+    });
+
+    worker.on('failed', (job, err) => {
+        console.error(`Job ${job?.id} has failed with error: ${err.message}`);
+    });
+
+
+const imapWorker = new Worker('imapWatcherQueue', async (job)=>{
+    try {
+        const {emailAccount , lastSynced , userId} = job.data;
+        await startEmailWatcher({emailAccount , lastSynced , userId});
+
+        
+    } catch (error) {
+        
+    }
+} , {connection: redisConnection});
+
+imapWorker.on('completed', (job , result) => {
+        console.log(`Job ${job.id} has completed! Result: ${result}`);
+    });
+
+    imapWorker.on('failed', (job, err) => {
+        console.error(`Job ${job?.id} has failed with error: ${err.message}`);
+    });
+
+    console.log(`Worker for queue emailCategorizeQueue started.`);
+

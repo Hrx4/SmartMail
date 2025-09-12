@@ -8,9 +8,9 @@ dotenv.config();
 const addEmailToImap = asyncHandler(
     async (req, res) => {
         const {  email, password } = req.body;    
-         
+        //  console.log(req.user , email , password);
 
-            const emailAccounts = {
+            const emailAccount = {
                                         user: email,
                                         password : password,
                                         host: "imap.gmail.com",
@@ -21,7 +21,14 @@ const addEmailToImap = asyncHandler(
                                         },
                                     };
 
-            const success = await startEmailWatcher(emailAccounts);
+             const getLast15DaysDate = () => {
+        const sinceDate = new Date();
+        sinceDate.setDate(sinceDate.getDate() - 15); // subtract 15 days
+        console.log(sinceDate.toLocaleString());
+        return sinceDate;
+    };
+
+            const success = await startEmailWatcher({emailAccount , lastSynced:getLast15DaysDate().toUTCString().slice(5, 16) , userId:req.user.userId});
             if(success === false){
                 throw new Error("Error in Email Watcher");
             }

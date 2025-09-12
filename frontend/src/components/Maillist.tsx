@@ -1,28 +1,9 @@
-import axios from "axios";
-import { useEffect } from "react";
-import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+
 
 const Maillist = ({ emails  }: { emails: any[] }) => {
-  const [category, setCategory] = useState("");
 
-  const handleClick = async (subject: string, body: string) => {
-    console.log(subject, body);
-    const response = await axios.post("https://outbox-assignment.vercel.app/category", {
-      email: {
-        subject: subject,
-        body: body,
-      },
-    });
-    console.log(response.data.category);
-    setCategory(response.data.category);
-  };
-
-  useEffect(() => {
-    if (category !== "") {
-      alert(category)
-      setCategory("")
-    }
-  }, [category]);
+ const navigate = useNavigate();
 
   return (
     <>
@@ -40,22 +21,20 @@ const Maillist = ({ emails  }: { emails: any[] }) => {
                 <div
                   key={email.messageId}
                   className=" w-[99%] ml-auto mr-auto p-2 h-24 border bg-[#88BDF2] cursor-pointer rounded-lg  "
+                  onClick={() => {
+                    navigate(`/mails/${email.messageId}`);
+                  }}
                 >
                   <div className=" w-full flex font-bold  items-center">
                     <div className=" w-full line-clamp-1">
                       {email?.subject}
                     </div>
-                    <button
+                    <div
                       className=" bg-red-300 p-2 text-xs rounded-lg mr-auto"
-                      onClick={() =>
-                        handleClick(
-                          email._source?.subject,
-                          email?.body
-                        )
-                      }
+                      
                     >
-                      Category
-                    </button>
+                      {email?.folder}
+                    </div>
                   </div>
                   <div className=" w-full line-clamp-1">
                     {email?.body}

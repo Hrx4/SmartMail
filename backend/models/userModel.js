@@ -43,7 +43,9 @@ const userSchema = new mongoose.Schema({
         type: String,
         require: true,
     },
-    
+     lastSynced : {
+        type:Date,
+    },    
     emails: [emailSchema]
 })
 

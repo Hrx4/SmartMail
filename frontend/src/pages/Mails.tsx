@@ -4,20 +4,24 @@ import Maillist from "../components/Maillist";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-
+import { Route, Routes, useNavigate } from "react-router-dom";
+import MailDetails from "../components/MailDetails";
+import {io} from 'socket.io-client';
 
  const Mails = () => {
+
 
      const [account, setAccount] = useState("All");
     const [folder, setFolder] = useState("INBOX");
     const [search, setSearch] = useState("");
-    const [emails, setEmails] = useState([]);
+    const [emails, setEmails] = useState<any[]>([]);
     const[addEmail, setAddEmail] = useState(false)
     const [userAccounts, setUserAccounts] = useState<string[]>([])
     const [loading , setLoading] = useState(false)
 
     const navigate= useNavigate()
+
+    const socket = io('http://localhost:5000');
 
     useEffect(() => {
     
@@ -39,6 +43,14 @@ import { useNavigate } from "react-router-dom";
         setEmails(data.emails);
         setLoading(false)
       };
+      socket.on("welcome", (msg) => {
+      console.log(msg);
+    });
+      socket.on("newEmail", (msg) => {
+        console.log(msg);
+        setEmails([...emails, msg])
+        setLoading(false)
+      });
       fetchEmails();
     }, [account, folder , search , addEmail]);
 
@@ -55,7 +67,11 @@ import { useNavigate } from "react-router-dom";
             addEmail={addEmail}
             userAccounts = {userAccounts}
           />
-          <Maillist emails={emails}  />
+          <Routes>
+            <Route path=":id" element={<MailDetails />} />
+            <Route index element={<Maillist emails={emails} />} />
+          </Routes>
+          
         </div>
       </div>
     )

@@ -71,6 +71,7 @@ const userLogin = asyncHandler(
             email: email,
             picture: picture,
             access_token: access_token,
+            userId: user._id,
         } , process.env.JWT_SECRET, { expiresIn: '1h' });
 
 

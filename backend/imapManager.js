@@ -8,25 +8,20 @@ const getQueries = require("./utils/getEmbeddedQueries");
 const { suggetionPromt } = require("./utils/gemini");
 const { triggerWebhook } = require("./slack");
 const { emailCategorizeQueue } = require("./config/bullmq");
+const io = require("./server");
+const { giveDetails } = require("./utils/llm");
+const userModel = require("./models/userModel");
 
 dotenv.config();
 
-
-
+const getDate = () => {
+                const sinceDate = new Date();
+sinceDate.setDate(sinceDate.getDate());
+return sinceDate
+}
 // const FOLDERS = ["INBOX", "[Gmail]/Sent Mail", "[Gmail]/Spam"];
 const FOLDERS = ["INBOX", "[Gmail]/Sent Mail"];
 
-function getLast30DaysDate() {
-  const date = new Date();
-  date.setDate(date.getDate() - 30);
-  return date
-    .toLocaleString("en-US", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-    .replace(",", "");
-}
 
 function connectIMAP(account) {
   return new Promise((resolve, reject) => {
@@ -58,9 +53,9 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
 
       imap.search([["SINCE", sinceDate]], (err, results) => {
         if (err || !results.length) return resolve([]);
-        const fetchRange = `${box.messages.total - 49}:*`
-
-        const f = imap.seq.fetch(fetchRange, { bodies: "", struct: true });
+         const latest = results.slice(-50);
+         console.log('search')
+        const f = imap.seq.fetch(latest, { bodies: "", struct: true });
         let emails = [];
 
         f.on("message", (msg) => {
@@ -80,7 +75,7 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
                 body: parsed.text,
                 receivedAt: parsed.date,
               };
-              await emailCategorizeQueue.add('categorizeEmails', { emailObj});
+              await emailCategorizeQueue.add('categorizeEmails', { emailObj} , { attempts:2 , backoff:{type:'exponential' , delay:3000} });
               emails.push(emailObj);
             } catch (parseErr) {
               console.error(`Parsing error: ${parseErr.message}`);
@@ -90,6 +85,7 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
 
         f.once("end", async() => {
             await storeBulkEmail(emails);
+             
           resolve(emails)
         });
         f.once("error", (err) =>
@@ -100,15 +96,19 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
   });
 }
 
-async function startEmailWatcher(emailAccount) {
-  const sinceDate = getLast30DaysDate();
+async function startEmailWatcher({emailAccount , lastSynced , userId}) {
+  
     try {
+      console.log(emailAccount , lastSynced , userId);
       const imap = await connectIMAP(emailAccount);
       
       for (const folder of FOLDERS) {
-        await fetchEmailsFromFolder(imap, folder, sinceDate);
+        await fetchEmailsFromFolder(imap, folder, lastSynced);
       }
-      watchForNewEmails(imap);
+
+      
+      await userModel.findByIdAndUpdate(userId , {lastSynced:getDate()});
+      watchForNewEmails(imap , userId);
     } catch (error) {
        
       console.error("Error:", error);
@@ -116,20 +116,19 @@ async function startEmailWatcher(emailAccount) {
     }
   }
 
-
-function watchForNewEmails(imap) {
+function watchForNewEmails(imap , userId) {
   imap.openBox("INBOX", true, (err) => {
     if (err) throw err;
     console.log("Watching for new emails...");
 
     imap.on("mail", async () => {
       console.log("New email detected!");
-      await fetchLatestEmail(imap);
+      await fetchLatestEmail(imap , userId);
     });
   });
 }
 
-async function fetchLatestEmail(imap) {
+async function fetchLatestEmail(imap , userId) {
   return new Promise((resolve, reject) => {
     imap.search(["ALL"], (err, results) => {
       if (err || !results.length) return reject("No emails found.");
@@ -146,6 +145,7 @@ async function fetchLatestEmail(imap) {
         msg.on("end", async () => {
           try {
             const parsed = await simpleParser(emailData);
+            
             let res = "Spam"
              res = await giveDetails({
               subject: parsed.subject,
@@ -162,7 +162,7 @@ async function fetchLatestEmail(imap) {
             };
             await storeOneEmail(emailObj);
             
-            const queriesFromDb = getQueries(parsed.text);
+            const queriesFromDb = await getQueries(parsed.text);
 
             console.log(queriesFromDb);
 
@@ -172,7 +172,9 @@ async function fetchLatestEmail(imap) {
             if (generatedResponse !== "False") {
               await triggerWebhook(generatedResponse);
             }
+            await userModel.findByIdAndUpdate(userId , {lastSynced:getDate()});
 
+             io.emit('newEmail' , emailObj)
             // if (res === "Interested\n") {
             //   await triggerWebhook(emailObj);
             // }

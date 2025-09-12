@@ -7,11 +7,32 @@ const cors = require("cors");
 const app = express();
 const dotenv = require("dotenv");
 const asyncHandler = require("express-async-handler");
+const http = require('http')
+require('./config/worker')
 
 const { request_get_auth_code_url } = require("./utils/oauth");
-const { connect } = require("mongoose");
 const connectDB = require("./dbs/mongo");
     const cookieParser = require('cookie-parser');
+// const { giveDetails } = require("./utils/llm");
+
+const {Server} = require('socket.io');
+const { imapWatcherQueue } = require("./config/bullmq");
+const userModel = require("./models/userModel");
+const server = http.createServer(app)
+
+const io = new Server(server , {cors:{
+  origin: "http://localhost:5173",
+}})
+
+io.on("connection", (socket) => {
+  console.log("User connected:", socket.id);
+
+  socket.emit("welcome", "Hello from server!");
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected:", socket.id);
+  });
+});
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -31,13 +52,14 @@ connectDB()
     app.use(cookieParser());
 
 
-
 app.get("/", async (req, res) => {
   res.send("working....");
 });
 
 app.use('/' , require('./routes/loginRoutes'))
 app.use('/' , require('./routes/emailRoutes'))
+
+ 
 
 
 
@@ -144,8 +166,39 @@ app.use('/' , require('./routes/emailRoutes'))
 //   }
 // });
 
-app.listen(5000, async () => {
+const scheduleUsers = async () => {
+  const users = await userModel.find({});
+
+  await Promise.all(
+    users.map((item)=>{
+      let emails = item.emails
+      let lastSynced = item.lastSynced
+      emails.forEach(element => {
+      const emailAccount = {
+                              user: element.email,
+                              password : element.password,
+                              host: "imap.gmail.com",
+                              port: 993,
+                              tls: true,
+                              tlsOptions: {
+                                rejectUnauthorized: false,
+                              },
+                            };
+
+        imapWatcherQueue.add('imapWatcherQueue',{emailAccount, lastSynced, userId:item._id});
+      });
+    })
+  )
+  
+};
+
+server.listen(5000, async () => {
   // await startEmailWatcher();
 
   console.log("Server running on port 5000");
+  scheduleUsers();
+
 });
+
+
+module.exports = io;
