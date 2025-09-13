@@ -12,7 +12,10 @@ const worker = new Worker('emailCategorizeQueue', async (job)=>{
     const currentMessage = await emailsModel.findOne({messageId});
      if (!currentMessage) {
         console.log("Message not found, retrying later...");
-        throw new Error("Document not found");
+        return
+      }
+      if(currentMessage && currentMessage.folder !== "Pending"){
+        return
       }
     const emailCategory = await giveDetails({subject , body});
     if(emailCategory === "Error"){
@@ -23,8 +26,8 @@ const worker = new Worker('emailCategorizeQueue', async (job)=>{
     const updatedMails = await currentMessage.save();
     return updatedMails.folder;
     } catch (error) {
-        console.error("Worker error:", err.message);
-      throw err; // let BullMQ handle retries/backoff
+        console.error("Worker error:", error.message);
+      throw error; // let BullMQ handle retries/backoff
     }
 } , {connection: redisConnection});
 
@@ -44,7 +47,7 @@ const imapWorker = new Worker('imapWatcherQueue', async (job)=>{
 
         
     } catch (error) {
-        
+        throw new Error(error);
     }
 } , {connection: redisConnection});
 

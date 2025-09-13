@@ -8,9 +8,9 @@ const getQueries = require("./utils/getEmbeddedQueries");
 const { suggetionPromt } = require("./utils/gemini");
 const { triggerWebhook } = require("./slack");
 const { emailCategorizeQueue } = require("./config/bullmq");
-const io = require("./server");
 const { giveDetails } = require("./utils/llm");
 const userModel = require("./models/userModel");
+const { getIO } = require("./utils/socket");
 
 dotenv.config();
 
@@ -53,9 +53,8 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
 
       imap.search([["SINCE", sinceDate]], (err, results) => {
         if (err || !results.length) return resolve([]);
-         const latest = results.slice(-50);
-         console.log('search')
-        const f = imap.seq.fetch(latest, { bodies: "", struct: true });
+         const fetchRange = `${box.messages.total - 49}:*`
+        const f = imap.seq.fetch(fetchRange, { bodies: "", struct: true });
         let emails = [];
 
         f.on("message", (msg) => {
@@ -75,7 +74,7 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
                 body: parsed.text,
                 receivedAt: parsed.date,
               };
-              await emailCategorizeQueue.add('categorizeEmails', { emailObj} , { attempts:2 , backoff:{type:'exponential' , delay:3000} });
+              await emailCategorizeQueue.add('categorizeEmails', { emailObj} , { attempts:2 , backoff:{type:'exponential' , delay:3000}, jobId:parsed.messageId });
               emails.push(emailObj);
             } catch (parseErr) {
               console.error(`Parsing error: ${parseErr.message}`);
@@ -162,7 +161,8 @@ async function fetchLatestEmail(imap , userId) {
             };
             await storeOneEmail(emailObj);
             
-            const queriesFromDb = await getQueries(parsed.text);
+            if(res === "Important" || res === "Work" ){
+              const queriesFromDb = await getQueries(parsed.text);
 
             console.log(queriesFromDb);
 
@@ -172,9 +172,10 @@ async function fetchLatestEmail(imap , userId) {
             if (generatedResponse !== "False") {
               await triggerWebhook(generatedResponse);
             }
+            }
             await userModel.findByIdAndUpdate(userId , {lastSynced:getDate()});
-
-             io.emit('newEmail' , emailObj)
+            const io = getIO()
+            io.emit("newEmail", emailObj);
             // if (res === "Interested\n") {
             //   await triggerWebhook(emailObj);
             // }

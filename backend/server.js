@@ -18,21 +18,24 @@ const connectDB = require("./dbs/mongo");
 const {Server} = require('socket.io');
 const { imapWatcherQueue } = require("./config/bullmq");
 const userModel = require("./models/userModel");
+const { initSocket } = require("./utils/socket");
 const server = http.createServer(app)
 
-const io = new Server(server , {cors:{
-  origin: "http://localhost:5173",
-}})
+// const io = new Server(server , {cors:{
+//   origin: "http://localhost:5173",
+// }})
 
-io.on("connection", (socket) => {
-  console.log("User connected:", socket.id);
+// io.on("connection", (socket) => {
+//   console.log("User connected:", socket.id);
 
-  socket.emit("welcome", "Hello from server!");
+//   socket.emit("welcome", "Hello from server!");
 
-  socket.on("disconnect", () => {
-    console.log("User disconnected:", socket.id);
-  });
-});
+//   socket.on("disconnect", () => {
+//     console.log("User disconnected:", socket.id);
+//   });
+// });
+
+initSocket(server)
 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
@@ -200,5 +203,3 @@ server.listen(5000, async () => {
 
 });
 
-
-module.exports = io;

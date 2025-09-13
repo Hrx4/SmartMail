@@ -48,7 +48,7 @@ import {io} from 'socket.io-client';
     });
       socket.on("newEmail", (msg) => {
         console.log(msg);
-        setEmails([...emails, msg])
+        setEmails((prevState) => [...prevState, msg]);
         setLoading(false)
       });
       fetchEmails();
