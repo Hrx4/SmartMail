@@ -80,4 +80,11 @@ const userLogin = asyncHandler(
     }
 )
 
-module.exports = { userLogin };
+const userLogout = asyncHandler(
+    async (req, res) => {
+        res.clearCookie('jwt_token');
+        res.status(200).json({ message: "Logged out successfully" });
+    }
+)
+
+module.exports = { userLogin , userLogout };

@@ -19,6 +19,9 @@ const emailSchema = new mongoose.Schema({
   subject: {
     type: String,
   },
+  parsedHTML:{
+    type: String,
+  },
   sender: {
     type: String,
     require: true,

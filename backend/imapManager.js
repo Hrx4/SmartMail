@@ -72,6 +72,7 @@ function fetchEmailsFromFolder(imap, folder, sinceDate) {
                 subject: parsed.subject,
                 sender: parsed.from.value[0].address,
                 body: parsed.text,
+                parsedHTML : parsed.html,
                 receivedAt: parsed.date,
               };
               await emailCategorizeQueue.add('categorizeEmails', { emailObj} , { attempts:2 , backoff:{type:'exponential' , delay:3000}, jobId:parsed.messageId });
@@ -157,6 +158,7 @@ async function fetchLatestEmail(imap , userId) {
               subject: parsed.subject,
               sender: parsed.from.value[0].address,
               body: parsed.text,
+              parsedHTML : parsed.html,
               receivedAt: parsed.date,
             };
             await storeOneEmail(emailObj);

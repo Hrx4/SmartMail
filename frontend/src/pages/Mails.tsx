@@ -12,7 +12,7 @@ import {io} from 'socket.io-client';
 
 
      const [account, setAccount] = useState("All");
-    const [folder, setFolder] = useState("INBOX");
+    const [folder, setFolder] = useState("All");
     const [search, setSearch] = useState("");
     const [emails, setEmails] = useState<any[]>([]);
     const[addEmail, setAddEmail] = useState(false)
@@ -26,7 +26,7 @@ import {io} from 'socket.io-client';
     useEffect(() => {
     
       const fetchEmails = async () => {
-        setLoading(true)
+        try{setLoading(true)
         const response = await axios.post("http://localhost:5000/allmails",
           {},{
             withCredentials: true
@@ -41,18 +41,23 @@ import {io} from 'socket.io-client';
         setUserAccounts(data.mailIds)
         console.log(data);
         setEmails(data.emails);
-        setLoading(false)
+        setLoading(false)}
+        catch(error:any){
+          if(error && error?.response?.status===401){
+            navigate('/login')
+          }
+        }
       };
       socket.on("welcome", (msg) => {
       console.log(msg);
     });
       socket.on("newEmail", (msg) => {
         console.log(msg);
-        setEmails((prevState) => [...prevState, msg]);
+        setEmails((prevState) => [msg,...prevState]);
         setLoading(false)
       });
       fetchEmails();
-    }, [account, folder , search , addEmail]);
+    }, []);
 
     return (
         <div className=" h-dvh  flex flex-col ">
@@ -69,7 +74,7 @@ import {io} from 'socket.io-client';
           />
           <Routes>
             <Route path=":id" element={<MailDetails />} />
-            <Route index element={<Maillist emails={emails} />} />
+            <Route index element={<Maillist emails={emails} folder={folder} account={account} />} />
           </Routes>
           
         </div>

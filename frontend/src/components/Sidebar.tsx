@@ -8,7 +8,7 @@ const Sidebar = ({
   setFolder,
   setAddEmail,
   addEmail,
-  userAccounts
+  userAccounts,
 }: {
   account: string;
   setAccount: Function;
@@ -41,7 +41,13 @@ const Sidebar = ({
       setOpenModal(false);
       
     }
-    } catch (error) {
+    else if(response.status===401){
+          window.location.href = '/login'
+        }
+    } catch (error:any) {
+      if(error && error?.response?.status===401){
+        window.location.href = '/login'
+      }
       console.log(error);
     }
     setLoading(false)
@@ -84,7 +90,9 @@ const Sidebar = ({
         name="folder"
         id="folder"
         value={folder}
-        onChange={(e) => setFolder(e.target.value)}
+        onChange={(e) => {
+          setFolder(e.target.value)
+        }}
         className=" w-full h-12 rounded-lg p-2 border"
       >
         <option value="All">All</option>
@@ -99,7 +107,7 @@ const Sidebar = ({
     <div>
       {openModal && <Modal email={email} password={password} setOpenModal={setOpenModal} setEmail={setEmail} setPassword={setPassword} addEmailToImap={addEmailToImap} loading={loading} />}
     </div>
-    \</>
+    </>
     
   );
 };

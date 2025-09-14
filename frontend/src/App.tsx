@@ -5,7 +5,6 @@ import Mails from "./pages/Mails";
 import Login from "./pages/Login";
 import NotFound from "./pages/NotFound";
 import { GoogleOAuthProvider } from "@react-oauth/google";
-import MailDetails from "./components/MailDetails";
 
 function App() {
 

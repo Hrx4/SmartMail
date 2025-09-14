@@ -53,7 +53,7 @@ const addEmailToImap = asyncHandler(
 
             console.log(mailIds);
 
-            const emails = await emailsModel.find({ account: { $in : mailIds}}).sort({});
+            const emails = await emailsModel.find({ account: { $in : mailIds}}).sort({receivedAt:-1});
            
             res.status(200).json({emails , mailIds});
         });
@@ -66,6 +66,13 @@ const addEmailToImap = asyncHandler(
             res.status(200).json(email);
         });
 
+    const getEmailById = asyncHandler(
+        async (req, res) => {
+            const { id } = req.body;
+            const email = await emailsModel.findOne({ messageId: id });
+            res.status(200).json(email);
+        });
 
 
-module.exports = { addEmailToImap , getAllEmails , getEmailByMail };
+
+module.exports = { addEmailToImap , getAllEmails , getEmailByMail , getEmailById };
