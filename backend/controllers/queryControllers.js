@@ -6,22 +6,22 @@ const generateEmbeddings = require("../utils/generateEmbeddings");
 
 const addQuery = asyncHandler(async (req, res) => {
 
-    const { userEmail, queryText } = req.body;
+    const {  queryText } = req.body;
 
-    if (!userEmail || !queryText ) {
+    if ( !queryText ) {
         res.status(400);
         throw new Error("Please fill all the fields");
     }
 
     const embeddings = await generateEmbeddings(queryText);
 
-    const user = await userModel.findOne({ mainEmail: userEmail });
+    const user = await userModel.findOne({ mainEmail: req.user.email });
     if (!user) {
         res.status(400);
         throw new Error("User not found");
     }
     const query = await queryModel.create({
-        userEmail,
+        userEmail : req.user.email,
         queryText,
         embeddings
     });

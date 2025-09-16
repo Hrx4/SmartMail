@@ -7,6 +7,7 @@ import axios from "axios";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import MailDetails from "../components/MailDetails";
 import {io} from 'socket.io-client';
+import { Loader, SplinePointer } from "lucide-react";
 
  const Mails = () => {
 
@@ -16,7 +17,7 @@ import {io} from 'socket.io-client';
     const [search, setSearch] = useState("");
     const [emails, setEmails] = useState<any[]>([]);
     const[addEmail, setAddEmail] = useState(false)
-    const [userAccounts, setUserAccounts] = useState<string[]>([])
+    const [userAccounts, setUserAccounts] = useState<string[]>(["All"])
     const [loading , setLoading] = useState(false)
 
     const navigate= useNavigate()
@@ -34,18 +35,19 @@ import {io} from 'socket.io-client';
         );
 
         if(response.status===401){
-          navigate('/login')
+          navigate('/')
         }
 
         const data = await response.data;
-        setUserAccounts(data.mailIds)
+        setUserAccounts((prevState) => [...prevState, ...data.mailIds])
         console.log(data);
         setEmails(data.emails);
         setLoading(false)}
         catch(error:any){
           if(error && error?.response?.status===401){
-            navigate('/login')
+            navigate('/')
           }
+          setLoading(false)
         }
       };
       socket.on("welcome", (msg) => {
@@ -72,10 +74,15 @@ import {io} from 'socket.io-client';
             addEmail={addEmail}
             userAccounts = {userAccounts}
           />
-          <Routes>
+          {
+            loading? <div className="w-full h-full flex items-center justify-center">
+              <Loader className="w-10 h-10 text-blue-600" />
+            </div>:
+            <Routes>
             <Route path=":id" element={<MailDetails />} />
             <Route index element={<Maillist emails={emails} folder={folder} account={account} />} />
           </Routes>
+          }
           
         </div>
       </div>

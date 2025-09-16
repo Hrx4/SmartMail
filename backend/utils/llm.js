@@ -16,19 +16,23 @@ const giveDetails = async (emails) => {
     Body: ${emails.body}
     `
 
-    const mainPrompt = `
-    You are an AI assistant that classifies emails into categories.
-        
+     const mainPrompt = `
+        You are an AI assistant that classifies emails into predefined categories.
 
+        ### Categories (choose only ONE):
+        ${CATEGORIES.map((c, i) => `${i + 1}. ${c}`).join("\n")}
+
+        ### Email to classify:
         ${userPrompt}
 
-    Strictly classify the email into one of these categories: ${CATEGORIES.join(
-      ", "
-    )}. 
-    and dont use any other words , sentences or reply multiple categories just reply with one of the categories.
+        ### Instructions:
+        1. Read the subject and body carefully.
+        2. Decide which single category from the list is the best fit.
+        3. Output only the category name, with no extra words, explanations, or punctuation.
 
-    
-        `;
+        ### Output:
+        (Write exactly one of the categories)
+            `;
 
         
    const response = await axios.post('http://localhost:11434/api/generate', {
@@ -54,15 +58,26 @@ const suggetionPromt = async (contexts, query) => {
       .join("\n\n");
 
     const prompt = `
-       You are an AI email assistant. Use the following past queries to take valuable information and craft a reply. 
-       If you find out that the new email is not related to the queries then strictly return "False" -
+        You are an AI email assistant. Your task is to analyze the new email in relation to past queries.
 
-    past queries - ${context}
-    
-    new email recived: "${query}"
-    
-    Generate a helpful and professional reply.
-     `;
+        ### Past Queries:
+        ${context}
+
+        ### New Email:
+        "${query}"
+
+        ### Instructions:
+        1. If the new email is unrelated to all past queries, reply with exactly:
+          False
+          (no explanation, no extra text).
+        2. If the new email is related, craft a helpful and professional reply.
+        3. Your reply should be clear, concise, and in a polite email tone.
+
+        ### Output:
+        Return only one of the following:
+        - "False"
+        - A professional email reply
+            `;
     const response = await axios.post('http://localhost:11434/api/generate', {
         model: 'llama3.1:latest',
         prompt: prompt,

@@ -61,6 +61,7 @@ app.get("/", async (req, res) => {
 
 app.use('/' , require('./routes/loginRoutes'))
 app.use('/' , require('./routes/emailRoutes'))
+app.use('/' , require('./routes/queryRoutes'))
 
  
 
