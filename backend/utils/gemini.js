@@ -48,12 +48,12 @@ const giveDetails = async (emails) => {
 const suggetionPromt = async (contexts, query) => {
   try {
     const context = contexts
-      .map((item) => `Past Email: ${item._source.query}`)
+      .map((item) => `Past Email: ${item.queryText}`)
       .join("\n\n");
 
     const prompt = `
        You are an AI email assistant. Use the following past queries to take valuable information and craft a reply. 
-       If you find out that the nex message is not related to the queries then just return "False" -
+       If you find out that the nex git addmessage is not related to the queries then just return "False" -
 
     past queries - ${context}
     

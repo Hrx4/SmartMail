@@ -7,7 +7,8 @@ import axios from "axios";
 import { Route, Routes, useNavigate } from "react-router-dom";
 import MailDetails from "../components/MailDetails";
 import {io} from 'socket.io-client';
-import { Loader, SplinePointer } from "lucide-react";
+import { Loader } from "lucide-react";
+import Queries from "./queries";
 
  const Mails = () => {
 
@@ -59,7 +60,7 @@ import { Loader, SplinePointer } from "lucide-react";
         setLoading(false)
       });
       fetchEmails();
-    }, []);
+    }, [addEmail]);
 
     return (
         <div className=" h-dvh  flex flex-col ">
@@ -79,8 +80,9 @@ import { Loader, SplinePointer } from "lucide-react";
               <Loader className="w-10 h-10 text-blue-600" />
             </div>:
             <Routes>
-            <Route path=":id" element={<MailDetails />} />
+            <Route path="/inbox/:id" element={<MailDetails />} />
             <Route index element={<Maillist emails={emails} folder={folder} account={account} />} />
+            <Route path="/queries" element={<Queries/>} />
           </Routes>
           }
           

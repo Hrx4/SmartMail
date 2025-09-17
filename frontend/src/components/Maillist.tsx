@@ -38,7 +38,7 @@ const Maillist = ({ emails , folder , account  }: { emails: any[] , folder: stri
               <>
                 <div
                   key={email.messageId}
-                  onClick={() => navigate(`/mails/${email.messageId}`)}
+                  onClick={() => navigate(`/mails/inbox/${email.messageId}`)}
                   className={`p-4 cursor-pointer hover:bg-gray-50 transition-colors
                     bg-blue-50 border-r-2 border-blue-600`}
                 >

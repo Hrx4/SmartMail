@@ -29,6 +29,17 @@ const addQuery = asyncHandler(async (req, res) => {
 
 })
 
+const getQueries = asyncHandler(async (req, res) => {
+    const user = await userModel.find({ mainEmail: req.user.email });
+    if (!user) {
+        res.status(400);
+        throw new Error("User not found");
+    }
+    const queries = await queryModel.find({ userEmail: req.user.email });
+    console.log(queries);
+    res.status(200).json(queries);
+})
+
 const deleteQuery = asyncHandler(async (req, res) => {
     const { id} = req.body;
 
@@ -37,4 +48,4 @@ const deleteQuery = asyncHandler(async (req, res) => {
 })
 
 
-module.exports = { addQuery , deleteQuery };
+module.exports = { addQuery , deleteQuery , getQueries };

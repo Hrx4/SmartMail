@@ -16,23 +16,19 @@ const giveDetails = async (emails) => {
     Body: ${emails.body}
     `
 
-     const mainPrompt = `
-        You are an AI assistant that classifies emails into predefined categories.
+      const mainPrompt = `
+    You are an AI assistant that classifies emails into categories.
+        
 
-        ### Categories (choose only ONE):
-        ${CATEGORIES.map((c, i) => `${i + 1}. ${c}`).join("\n")}
-
-        ### Email to classify:
         ${userPrompt}
 
-        ### Instructions:
-        1. Read the subject and body carefully.
-        2. Decide which single category from the list is the best fit.
-        3. Output only the category name, with no extra words, explanations, or punctuation.
+    Strictly classify the email into one of these categories: ${CATEGORIES.join(
+      ", "
+    )}. 
+    and dont use any other words , sentences or reply multiple categories just reply with one of the categories.
 
-        ### Output:
-        (Write exactly one of the categories)
-            `;
+    
+        `;
 
         
    const response = await axios.post('http://localhost:11434/api/generate', {

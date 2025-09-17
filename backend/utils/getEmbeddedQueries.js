@@ -13,7 +13,7 @@ const getQueries = async (body) => {
                 limit:1,
                 numCandidates: 768,
                 queryVector: embeddings,
-                index: "embeddings_1",
+                index: "vector_index",
                 path:"embeddings",
             }
         }

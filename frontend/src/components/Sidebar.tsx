@@ -2,6 +2,7 @@ import axios from "axios";
 import { AlertCircle, Briefcase, Heart, Inbox, MessageSquare, Newspaper, Plus, Shield, X } from "lucide-react";
 import {  useState } from "react";
 import { backend } from "../../backend";
+import { useNavigate } from "react-router-dom";
 
 const Sidebar = ({
   account,
@@ -32,7 +33,7 @@ const Sidebar = ({
   ];
 
 
-
+const navigate = useNavigate()
 
   const [openModal, setOpenModal] = useState(false);
   const [openQueryModal, setOpenQueryModal] = useState(false);
@@ -54,6 +55,7 @@ const Sidebar = ({
       setAddEmail(!addEmail)
       setOpenModal(false);
       
+      
     }
     else if(response.status===401){
           window.location.href = '/'
@@ -68,6 +70,7 @@ const Sidebar = ({
   };
 
   const handleQuery=async ()=>{
+    setLoading(true)
     try {
       
       const response = await axios.post(`${backend}/addquery`,
@@ -87,6 +90,7 @@ const Sidebar = ({
       }
       console.log(error)
     }
+    setLoading(false)
   }
 
   const addAccount = () => {
@@ -165,10 +169,10 @@ const Sidebar = ({
             <span>Add Queries</span>
           </button>
         </div>
-        <div className="flex items-center space-x-2 mb-3 rounded-lg  border-gray-200 p-4 cursor-pointer text-gray-700 hover:bg-gray-100">
+        <button className="flex items-center space-x-2 mb-3 rounded-lg  border-gray-200 p-4 w-full text-gray-700 hover:bg-gray-100" onClick={()=>navigate("/mails/queries")}>
             <MessageSquare className="w-4 h-4 text-gray-600" />
             <span className="font-medium text-gray-900">All Queries</span>
-          </div>
+          </button>
 
 
     </div>
@@ -234,7 +238,7 @@ const Sidebar = ({
     setOpenQueryModal: Function;
     query: string;
     setQuery: Function;
-    handleQuery: Function
+    handleQuery: () => void;
         loading: boolean;
 
   }
