@@ -3,11 +3,24 @@ const userModel = require("../models/userModel");
 const dotenv = require("dotenv");
 const { startEmailWatcher } = require("../imapManager");
 const emailsModel = require("../models/emailsModel");
+const z = require("zod");
 dotenv.config();
 
 const addEmailToImap = asyncHandler(
     async (req, res) => {
-        const {  email, password } = req.body;    
+        const schema = z.object({
+            email: z.string().email("Invalid email address"),
+            password: z.string().min(1, "Password cannot be empty"),
+        });
+        const parsed = schema.safeParse(req.body);
+        if (!parsed.success) {
+            return res.status(400).json({
+                error: parsed.error.errors[0].message,
+            });
+        }
+
+        const {  email, password } = parsed.data;  
+
         //  console.log(req.user , email , password);
 
             const emailAccount = {
@@ -47,20 +60,30 @@ const addEmailToImap = asyncHandler(
 
     const getAllEmails = asyncHandler(
         async (req, res) => {
-            
+            console.log("Fetching all emails for user:", req.user.email);
             const user = await userModel.findOne({mainEmail : req.user.email});
             const mailIds = user.emails.map((item)=> item.email)
 
-            console.log(mailIds);
-
+            
+console.log('starting to fetch emails from db');
             const emails = await emailsModel.find({ account: { $in : mailIds}}).sort({receivedAt:-1});
+            console.log( ' emails fetched from db and length is ' , emails.length);
            
             res.status(200).json({emails , mailIds});
         });
 
     const getEmailByMail = asyncHandler(
         async (req, res) => {
-            const { mail } = req.body;
+            const schema = z.object({
+                mail: z.string().email("Invalid email address"),
+            });
+            const parsed = schema.safeParse(req.body);
+            if (!parsed.success) {
+                return res.status(400).json({
+                    error: parsed.error.errors[0].message,
+                });
+            }
+            const { mail } = parsed.data;
 
             const email = await emailsModel.findOne({ account: mail });
             res.status(200).json(email);
@@ -68,7 +91,17 @@ const addEmailToImap = asyncHandler(
 
     const getEmailById = asyncHandler(
         async (req, res) => {
-            const { id } = req.body;
+            const schema = z.object({
+                id: z.string().min(1, "messageId is required"),
+            });
+            const parsed = schema.safeParse(req.body);
+            if (!parsed.success) {
+                return res.status(400).json({
+                    error: parsed.error.errors[0].message,
+                });
+            }
+            const { id } = parsed.data;
+        
             const email = await emailsModel.findOne({ messageId: id });
             res.status(200).json(email);
         });

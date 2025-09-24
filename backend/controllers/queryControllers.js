@@ -3,15 +3,21 @@ const asyncHandler = require("express-async-handler");
 const queryModel = require("../models/queryModel");
 const userModel = require("../models/userModel");
 const generateEmbeddings = require("../utils/generateEmbeddings");
+const z = require("zod");
 
 const addQuery = asyncHandler(async (req, res) => {
+    const schema = z.object({
+    queryText: z.string().min(1, "Query text cannot be empty"),
+  });
 
-    const {  queryText } = req.body;
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({
+      error: parsed.error.errors[0].message,
+    });
+  }
 
-    if ( !queryText ) {
-        res.status(400);
-        throw new Error("Please fill all the fields");
-    }
+  const { queryText } = parsed.data;
 
     const embeddings = await generateEmbeddings(queryText);
 
@@ -41,7 +47,18 @@ const getQueries = asyncHandler(async (req, res) => {
 })
 
 const deleteQuery = asyncHandler(async (req, res) => {
-    const { id} = req.body;
+    const schema = z.object({
+        id: z.string().min(1, "Query ID is required"),
+    });
+
+    const parsed = schema.safeParse(req.body);
+    if (!parsed.success) {
+        return res.status(400).json({
+            error: parsed.error.errors[0].message,
+        });
+    }
+    const { id} = parsed.data;
+
 
     const query = await queryModel.findByIdAndDelete(id);
     res.status(200).json(query);

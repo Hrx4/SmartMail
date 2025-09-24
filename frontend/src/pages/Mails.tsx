@@ -8,7 +8,7 @@ import { Route, Routes, useNavigate } from "react-router-dom";
 import MailDetails from "../components/MailDetails";
 import {io} from 'socket.io-client';
 import { Loader } from "lucide-react";
-import Queries from "./queries";
+import Queries from "./Queries";
 
  const Mails = () => {
 
@@ -28,7 +28,9 @@ import Queries from "./queries";
     useEffect(() => {
     
       const fetchEmails = async () => {
-        try{setLoading(true)
+        setLoading(true)
+        try{
+          
         const response = await axios.post("http://localhost:5000/allmails",
           {},{
             withCredentials: true
@@ -43,13 +45,14 @@ import Queries from "./queries";
         setUserAccounts((prevState) => [...prevState, ...data.mailIds])
         console.log(data);
         setEmails(data.emails);
-        setLoading(false)}
+        }
         catch(error:any){
           if(error && error?.response?.status===401){
             navigate('/')
           }
-          setLoading(false)
+          
         }
+        setLoading(false)
       };
       socket.on("welcome", (msg) => {
       console.log(msg);

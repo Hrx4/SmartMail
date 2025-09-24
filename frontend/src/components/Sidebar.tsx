@@ -143,7 +143,9 @@ const navigate = useNavigate()
             {categories.map((category) => (
               <button
                 key={category.name}
-                onClick={() => setFolder(category.name)}
+                onClick={() => {setFolder(category.name)
+                  navigate('/mails')}
+                }
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors duration-200 ${
                   folder === category.name
                     ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
