@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+
+  redisinsight:
+    image: redis/redisinsight
+    container_name: redis-insight
+    ports:
+      - "8001:8001"
+    links:
+      - redis # Allows RedisInsight to connect to the Redis service by name
+
+  ollama:
+    image: ollama/ollama
+    container_name: ollama-simple
+    ports:
+      - "11435:11434"
+    networks:
+      - llm-network
+    restart: unless-stopped
+    entrypoint: ["/bin/bash", "-c", "\
+      ollama serve & \
+      sleep 5 && \
+      ollama pull llama3.2 && \
+      wait"]
+
+  server:
+    build: .
+    ports:
+      - 5000:5000
+    depends_on:
+      - redis
+      - ollama
