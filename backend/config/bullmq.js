@@ -1,11 +1,11 @@
 const {Queue} = require('bullmq');
-const {Redis} = require('ioredis');
+// const {Redis} = require('ioredis');
 
-const redisConnection = new Redis({
+const redisConnection = {
     maxRetriesPerRequest: null,
     port: 6379,
-    host: 'localhost',
-})
+    host: 'redis',
+}
 
 const emailCategorizeQueue = new Queue('emailCategorizeQueue', {
     connection: redisConnection,

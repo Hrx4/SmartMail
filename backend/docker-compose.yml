@@ -2,15 +2,19 @@ version: '3.8'
 
 services:
   redis:
-    image: redis:latest
+    image: redis
     ports:
       - 6379:6379
+    networks:
+      - llm-network
 
   redisinsight:
     image: redis/redisinsight
     container_name: redis-insight
     ports:
-      - "8001:8001"
+      - "5540:5540"
+    networks:
+      - llm-network
     links:
       - redis # Allows RedisInsight to connect to the Redis service by name
 
@@ -18,15 +22,15 @@ services:
     image: ollama/ollama
     container_name: ollama-simple
     ports:
-      - "11435:11434"
+      - "11434:11434"
     networks:
       - llm-network
-    restart: unless-stopped
-    entrypoint: ["/bin/bash", "-c", "\
-      ollama serve & \
-      sleep 5 && \
-      ollama pull llama3.2 && \
-      wait"]
+    # restart: unless-stopped
+    # entrypoint: ["/bin/bash", "-c", "
+    #   ollama serve & 
+    #   sleep 5 
+    #   ollama pull llama3.2 
+    #   wait"]
 
   server:
     build: .
@@ -34,4 +38,11 @@ services:
       - 5000:5000
     depends_on:
       - redis
+      - redisinsight
       - ollama
+    networks:
+      - llm-network
+
+networks:
+  llm-network:
+    driver: bridge
